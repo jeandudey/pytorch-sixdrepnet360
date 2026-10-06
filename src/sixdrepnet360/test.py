@@ -7,11 +7,10 @@ import math
 import os
 
 import cv2
-import datasets
 import numpy as np
 import torch
 import torchvision
-import utils
+from sixdrepnet360 import datasets, utils
 from torch import nn
 from torch.backends import cudnn
 from torch.hub import load_state_dict_from_url
@@ -270,12 +269,11 @@ if __name__ == "__main__":
                     cv2_img = cv2.imread(os.path.join(args.data_dir, name + ".jpg"))
 
                 elif args.dataset == "BIWI":
-                    vis = np.uint8(name)
-                    h, w, c = vis.shape
-                    vis2 = cv2.CreateMat(h, w, cv2.CV_32FC3)
-                    vis0 = cv2.fromarray(vis)
-                    cv2.CvtColor(vis0, vis2, cv2.CV_GRAY2BGR)
-                    cv2_img = cv2.imread(vis2)
+                    vis = np.asarray(name, dtype=np.uint8)
+                    cv2_img = cv2.cvtColor(vis, cv2.COLOR_RGB2BGR)
+
+                if cv2_img is None:
+                    raise ValueError("Failed to load image.")
                 utils.draw_axis(
                     cv2_img,
                     y_pred_deg[0],

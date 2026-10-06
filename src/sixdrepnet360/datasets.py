@@ -6,9 +6,9 @@ import os
 
 import numpy as np
 import torch
-import utils
 from PIL import Image, ImageFilter
 from torch.utils.data.dataset import Dataset
+from sixdrepnet360 import utils
 
 
 def get_list_from_filenames(file_path):
@@ -220,7 +220,7 @@ class BIWI(Dataset):
         self.length = len(x_data)
 
     def __getitem__(self, index):
-        img = Image.fromarray(np.uint8(self.X_train[index]))
+        img = Image.fromarray(self.X_train[index].astype(np.uint8))
         img = img.convert(self.image_mode)
 
         roll = self.y_train[index][2] / 180 * np.pi
@@ -234,7 +234,7 @@ class BIWI(Dataset):
             if rnd < 0.5:
                 yaw = -yaw
                 roll = -roll
-                img = img.transpose(Image.FLIP_LEFT_RIGHT)
+                img = img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
 
             # Blur?
             rnd = np.random.random_sample()
@@ -313,7 +313,7 @@ class Pose_300W_LP(Dataset):
         if rnd < 0.5:
             yaw = -yaw
             roll = -roll
-            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+            img = img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
 
         # Blur?
         rnd = np.random.random_sample()
