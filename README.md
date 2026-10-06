@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2026 (c) 2023 Thorsten Hempel
+SPDX-FileCopyrightText: 2023 Thorsten Hempel
 
 SPDX-License-Identifier: MIT
 -->
