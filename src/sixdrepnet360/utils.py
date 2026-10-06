@@ -2,16 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-import math
 from math import cos, sin
 
+import cv2
 import numpy as np
-import torch
 
 # from torch.utils.serialization import load_lua
 import scipy.io as sio
-import cv2
+import torch
 
 
 def plot_pose_cube(img, yaw, pitch, roll, tdx=None, tdy=None, size=150.0):

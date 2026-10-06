@@ -2,26 +2,20 @@
 #
 # SPDX-License-Identifier: MIT
 
-import math
-from matplotlib import pyplot as plt
-import sys
-import os
 import argparse
+import math
+import os
 
-import numpy as np
 import cv2
-from torchvision.utils import make_grid
-
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
-from torchvision import transforms
-import torch.backends.cudnn as cudnn
-import torchvision
-import torch.nn.functional as F
 import datasets
+import numpy as np
+import torch
+import torchvision
 import utils
+from torch import nn
+from torch.backends import cudnn
 from torch.hub import load_state_dict_from_url
+from torchvision import transforms
 
 # matplotlib.use("gtk")
 
@@ -29,7 +23,7 @@ from torch.hub import load_state_dict_from_url
 class SixDRepNet360(nn.Module):
     def __init__(self, block, layers, fc_layers=1):
         self.inplanes = 64
-        super(SixDRepNet360, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
