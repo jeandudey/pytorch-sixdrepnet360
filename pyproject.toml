@@ -22,6 +22,9 @@ dependencies = [
     "torchvision>=0.29.1",
 ]
 
+[project.scripts]
+sixdrepnet360-test = "sixdrepnet360.test:main"
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ANN"]
 

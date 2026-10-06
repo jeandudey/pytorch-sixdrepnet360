@@ -65,7 +65,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main() -> None:
     args = parse_args()
     cudnn.enabled = True
     gpu = args.gpu_id
@@ -241,3 +241,7 @@ if __name__ == "__main__":
             f"Vec1: {v1_err / total:.4f}, Vec2: {v2_err / total:.4f}, "
             f"Vec3: {v3_err / total:.4f}, VMAE: {vmae:.4f}"
         )
+
+
+if __name__ == "__main__":
+    main()
