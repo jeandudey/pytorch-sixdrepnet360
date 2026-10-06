@@ -6,13 +6,20 @@ from math import cos, sin
 
 import cv2
 import numpy as np
-
-# from torch.utils.serialization import load_lua
 import scipy.io as sio
 import torch
+from numpy.typing import NDArray
 
 
-def plot_pose_cube(img, yaw, pitch, roll, tdx=None, tdy=None, size=150.0):
+def plot_pose_cube(
+    img: NDArray[np.uint8],
+    yaw: torch.Tensor,
+    pitch: torch.Tensor,
+    roll: torch.Tensor,
+    tdx: float | None = None,
+    tdy: float | None = None,
+    size: float = 150.0,
+) -> NDArray[np.uint8]:
     # Input is a cv2 image
     # pose_params: (pitch, yaw, roll, tdx, tdy)
     # Where (tdx, tdy) is the translation of the face.
@@ -21,7 +28,7 @@ def plot_pose_cube(img, yaw, pitch, roll, tdx=None, tdy=None, size=150.0):
     p = pitch * np.pi / 180
     y = -(yaw * np.pi / 180)
     r = roll * np.pi / 180
-    if tdx != None and tdy != None:
+    if tdx is not None and tdy is not None:
         face_x = tdx - 0.50 * size
         face_y = tdy - 0.50 * size
 
@@ -110,8 +117,15 @@ def plot_pose_cube(img, yaw, pitch, roll, tdx=None, tdy=None, size=150.0):
     return img
 
 
-def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size=100):
-
+def draw_axis(
+    img: NDArray[np.uint8],
+    yaw: torch.Tensor,
+    pitch: torch.Tensor,
+    roll: torch.Tensor,
+    tdx: float | None = None,
+    tdy: float | None = None,
+    size: int = 100,
+) -> NDArray[np.uint8]:
     pitch = pitch * np.pi / 180
     yaw = -(yaw * np.pi / 180)
     roll = roll * np.pi / 180
@@ -141,18 +155,17 @@ def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size=100):
     return img
 
 
-def get_pose_params_from_mat(mat_path):
+def get_pose_params_from_mat(mat_path: str) -> NDArray[np.float32]:
     # This functions gets the pose parameters from the .mat
     # Annotations that come with the Pose_300W_LP dataset.
     mat = sio.loadmat(mat_path)
     # [pitch yaw roll tdx tdy tdz scale_factor]
     pre_pose_params = mat["Pose_Para"][0]
     # Get [pitch, yaw, roll, tdx, tdy]
-    pose_params = pre_pose_params[:5]
-    return pose_params
+    return pre_pose_params[:5]
 
 
-def get_ypr_from_mat(mat_path):
+def get_ypr_from_mat(mat_path: str) -> NDArray[np.float32]:
     # Get yaw, pitch, roll from .mat annotation.
     # They are in radians
     mat = sio.loadmat(mat_path)
@@ -163,7 +176,7 @@ def get_ypr_from_mat(mat_path):
     return pose_params
 
 
-def get_pt2d_from_mat(mat_path):
+def get_pt2d_from_mat(mat_path: str) -> NDArray[np.float64]:
     # Get 2D landmarks
     mat = sio.loadmat(mat_path)
     pt2d = mat["pt2d"]
@@ -171,7 +184,7 @@ def get_pt2d_from_mat(mat_path):
 
 
 # batch*n
-def normalize_vector(v):
+def normalize_vector(v: torch.Tensor) -> torch.Tensor:
     batch = v.shape[0]
     v_mag = torch.sqrt(v.pow(2).sum(1))  # batch
     gpu = v_mag.get_device()
@@ -188,7 +201,7 @@ def normalize_vector(v):
 
 
 # u, v batch*n
-def cross_product(u, v):
+def cross_product(u: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     batch = u.shape[0]
     # print (u.shape)
     # print (v.shape)
@@ -205,7 +218,7 @@ def cross_product(u, v):
 
 # poses batch*6
 # poses
-def compute_rotation_matrix_from_ortho6d(poses):
+def compute_rotation_matrix_from_ortho6d(poses: torch.Tensor) -> torch.Tensor:
     x_raw = poses[:, 0:3]  # batch*3
     y_raw = poses[:, 3:6]  # batch*3
 
@@ -217,14 +230,15 @@ def compute_rotation_matrix_from_ortho6d(poses):
     x = x.view(-1, 3, 1)
     y = y.view(-1, 3, 1)
     z = z.view(-1, 3, 1)
-    matrix = torch.cat((x, y, z), 2)  # batch*3*3
-    return matrix
+    return torch.cat((x, y, z), 2)  # batch*3*3
 
 
 # input batch*4*4 or batch*3*3
 # output torch batch*3 x, y, z in radiant
 # the rotation is in the sequence of x,y,z
-def compute_euler_angles_from_rotation_matrices(rotation_matrices):
+def compute_euler_angles_from_rotation_matrices(
+    rotation_matrices: torch.Tensor,
+) -> torch.Tensor:
     batch = rotation_matrices.shape[0]
     R = rotation_matrices
     sy = torch.sqrt(R[:, 0, 0] * R[:, 0, 0] + R[:, 1, 0] * R[:, 1, 0])
@@ -255,7 +269,7 @@ def compute_euler_angles_from_rotation_matrices(rotation_matrices):
     return out_euler
 
 
-def get_R(x, y, z):
+def get_R(x: float, y: float, z: float) -> np.ndarray:
     """Get rotation matrix from three rotation angles (radians). right-handed.
     Args:
         angles: [3,]. x, y, z angles
@@ -269,5 +283,4 @@ def get_R(x, y, z):
     # z
     Rz = np.array([[np.cos(z), -np.sin(z), 0], [np.sin(z), np.cos(z), 0], [0, 0, 1]])
 
-    R = Rz.dot(Ry.dot(Rx))
-    return R
+    return Rz.dot(Ry.dot(Rx))

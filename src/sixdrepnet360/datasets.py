@@ -8,10 +8,12 @@ import numpy as np
 import torch
 from PIL import Image, ImageFilter
 from torch.utils.data.dataset import Dataset
+from torchvision import transforms
+
 from sixdrepnet360 import utils
 
 
-def get_list_from_filenames(file_path):
+def get_list_from_filenames(file_path: str) -> list[str]:
     # input:    relative path to .txt file with file names
     # output:   list of relative path names
     print(file_path)
@@ -23,13 +25,13 @@ def get_list_from_filenames(file_path):
 class AFLW2000(Dataset):
     def __init__(
         self,
-        data_dir,
-        filename_path,
-        transform,
-        img_ext=".jpg",
-        annot_ext=".mat",
-        image_mode="RGB",
-    ):
+        data_dir: str,
+        filename_path: str,
+        transform: transforms.Compose,
+        img_ext: str = ".jpg",
+        annot_ext: str = ".mat",
+        image_mode: str = "RGB",
+    ) -> None:
         self.data_dir = data_dir
         self.transform = transform
         self.img_ext = img_ext
@@ -41,7 +43,9 @@ class AFLW2000(Dataset):
         self.image_mode = image_mode
         self.length = len(filename_list)
 
-    def __getitem__(self, index):
+    def __getitem__(
+        self, index: int
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
         img = Image.open(
             os.path.join(self.data_dir, self.X_train[index] + self.img_ext)
         )
@@ -79,7 +83,7 @@ class AFLW2000(Dataset):
 
         return img, torch.FloatTensor(R), labels, self.X_train[index]
 
-    def __len__(self):
+    def __len__(self) -> int:
         # 2,000
         return self.length
 
@@ -87,13 +91,13 @@ class AFLW2000(Dataset):
 class AFLW(Dataset):
     def __init__(
         self,
-        data_dir,
-        filename_path,
-        transform,
-        img_ext=".jpg",
-        annot_ext=".txt",
-        image_mode="RGB",
-    ):
+        data_dir: str,
+        filename_path: str,
+        transform: transforms.Compose,
+        img_ext: str = ".jpg",
+        annot_ext: str = ".txt",
+        image_mode: str = "RGB",
+    ) -> None:
         self.data_dir = data_dir
         self.transform = transform
         self.img_ext = img_ext
@@ -106,7 +110,9 @@ class AFLW(Dataset):
         self.image_mode = image_mode
         self.length = len(filename_list)
 
-    def __getitem__(self, index):
+    def __getitem__(
+        self, index: int
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
         img = Image.open(
             os.path.join(self.data_dir, self.X_train[index] + self.img_ext)
         )
@@ -133,7 +139,7 @@ class AFLW(Dataset):
 
         return img, labels, cont_labels, self.X_train[index]
 
-    def __len__(self):
+    def __len__(self) -> int:
         # train: 18,863
         # test: 1,966
         return self.length
@@ -142,13 +148,13 @@ class AFLW(Dataset):
 class AFW(Dataset):
     def __init__(
         self,
-        data_dir,
-        filename_path,
-        transform,
-        img_ext=".jpg",
-        annot_ext=".txt",
-        image_mode="RGB",
-    ):
+        data_dir: str,
+        filename_path: str,
+        transform: transforms.Compose,
+        img_ext: str = ".jpg",
+        annot_ext: str = ".txt",
+        image_mode: str = "RGB",
+    ) -> None:
         self.data_dir = data_dir
         self.transform = transform
         self.img_ext = img_ext
@@ -161,7 +167,9 @@ class AFW(Dataset):
         self.image_mode = image_mode
         self.length = len(filename_list)
 
-    def __getitem__(self, index):
+    def __getitem__(
+        self, index: int
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
         txt_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
         img_name = self.X_train[index].split("_")[0]
 
@@ -197,15 +205,20 @@ class AFW(Dataset):
 
         return img, labels, cont_labels, self.X_train[index]
 
-    def __len__(self):
+    def __len__(self) -> int:
         # Around 200
         return self.length
 
 
 class BIWI(Dataset):
     def __init__(
-        self, data_dir, filename_path, transform, image_mode="RGB", train_mode=True
-    ):
+        self,
+        data_dir: str,
+        filename_path: str,
+        transform: transforms.Compose,
+        image_mode: str = "RGB",
+        train_mode: bool = True,
+    ) -> None:
         self.data_dir = data_dir
         self.transform = transform
 
@@ -219,7 +232,9 @@ class BIWI(Dataset):
         self.train_mode = train_mode
         self.length = len(x_data)
 
-    def __getitem__(self, index):
+    def __getitem__(
+        self, index: int
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
         img = Image.fromarray(self.X_train[index].astype(np.uint8))
         img = img.convert(self.image_mode)
 
@@ -250,7 +265,7 @@ class BIWI(Dataset):
         cont_labels = torch.FloatTensor([yaw, pitch, roll])
         return img, torch.FloatTensor(R), cont_labels, self.X_train[index]
 
-    def __len__(self):
+    def __len__(self) -> int:
         # 15,667
         return self.length
 
@@ -259,13 +274,13 @@ class Pose_300W_LP(Dataset):
     # Head pose from 300W-LP dataset
     def __init__(
         self,
-        data_dir,
-        filename_path,
-        transform,
-        img_ext=".jpg",
-        annot_ext=".mat",
-        image_mode="RGB",
-    ):
+        data_dir: str,
+        filename_path: str,
+        transform: transforms.Compose,
+        img_ext: str = ".jpg",
+        annot_ext: str = ".mat",
+        image_mode: str = "RGB",
+    ) -> None:
         self.data_dir = data_dir
         self.transform = transform
         self.img_ext = img_ext
@@ -277,7 +292,9 @@ class Pose_300W_LP(Dataset):
         self.image_mode = image_mode
         self.length = len(filename_list)
 
-    def __getitem__(self, index):
+    def __getitem__(
+        self, index: int
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
         img = Image.open(
             os.path.join(self.data_dir, self.X_train[index] + self.img_ext)
         )
@@ -335,12 +352,18 @@ class Pose_300W_LP(Dataset):
 
         return img, torch.FloatTensor(R), [], self.X_train[index]
 
-    def __len__(self):
+    def __len__(self) -> int:
         # 122,450
         return self.length
 
 
-def getDataset(dataset, data_dir, filename_list, transformations, train_mode=True):
+def getDataset(
+    dataset: str,
+    data_dir: str,
+    filename_list: str,
+    transformations: transforms.Compose,
+    train_mode: bool = True,
+) -> Dataset:
     if dataset == "Pose_300W_LP":
         pose_dataset = Pose_300W_LP(data_dir, filename_list, transformations)
     elif dataset == "AFLW2000":
