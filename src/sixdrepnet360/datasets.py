@@ -14,7 +14,6 @@ import utils
 import os
 
 
-
 def get_list_from_filenames(file_path):
     # input:    relative path to .txt file with file names
     # output:   list of relative path names
@@ -23,9 +22,17 @@ def get_list_from_filenames(file_path):
         lines = f.read().splitlines()
     return lines
 
-    
+
 class AFLW2000(Dataset):
-    def __init__(self, data_dir, filename_path, transform, img_ext='.jpg', annot_ext='.mat', image_mode='RGB'):
+    def __init__(
+        self,
+        data_dir,
+        filename_path,
+        transform,
+        img_ext=".jpg",
+        annot_ext=".mat",
+        image_mode="RGB",
+    ):
         self.data_dir = data_dir
         self.transform = transform
         self.img_ext = img_ext
@@ -38,17 +45,19 @@ class AFLW2000(Dataset):
         self.length = len(filename_list)
 
     def __getitem__(self, index):
-        img = Image.open(os.path.join(self.data_dir, self.X_train[index] + self.img_ext))
+        img = Image.open(
+            os.path.join(self.data_dir, self.X_train[index] + self.img_ext)
+        )
         img = img.convert(self.image_mode)
         mat_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
 
         # Crop the face loosely
         pt2d = utils.get_pt2d_from_mat(mat_path)
 
-        x_min = min(pt2d[0,:])
-        y_min = min(pt2d[1,:])
-        x_max = max(pt2d[0,:])
-        y_max = max(pt2d[1,:])
+        x_min = min(pt2d[0, :])
+        y_min = min(pt2d[1, :])
+        x_max = max(pt2d[0, :])
+        y_max = max(pt2d[1, :])
 
         k = 0.20
         x_min -= 2 * k * abs(x_max - x_min)
@@ -60,14 +69,13 @@ class AFLW2000(Dataset):
         # We get the pose in radians
         pose = utils.get_ypr_from_mat(mat_path)
         # And convert to degrees.
-        pitch = pose[0]# * 180 / np.pi
-        yaw = pose[1] #* 180 / np.pi
-        roll = pose[2]# * 180 / np.pi
-     
+        pitch = pose[0]  # * 180 / np.pi
+        yaw = pose[1]  # * 180 / np.pi
+        roll = pose[2]  # * 180 / np.pi
+
         R = utils.get_R(pitch, yaw, roll)
 
         labels = torch.FloatTensor([yaw, pitch, roll])
-
 
         if self.transform is not None:
             img = self.transform(img)
@@ -80,7 +88,15 @@ class AFLW2000(Dataset):
 
 
 class AFLW(Dataset):
-    def __init__(self, data_dir, filename_path, transform, img_ext='.jpg', annot_ext='.txt', image_mode='RGB'):
+    def __init__(
+        self,
+        data_dir,
+        filename_path,
+        transform,
+        img_ext=".jpg",
+        annot_ext=".txt",
+        image_mode="RGB",
+    ):
         self.data_dir = data_dir
         self.transform = transform
         self.img_ext = img_ext
@@ -94,13 +110,15 @@ class AFLW(Dataset):
         self.length = len(filename_list)
 
     def __getitem__(self, index):
-        img = Image.open(os.path.join(self.data_dir, self.X_train[index] + self.img_ext))
+        img = Image.open(
+            os.path.join(self.data_dir, self.X_train[index] + self.img_ext)
+        )
         img = img.convert(self.image_mode)
         txt_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
 
         # We get the pose in radians
-        annot = open(txt_path, 'r')
-        line = annot.readline().split(' ')
+        annot = open(txt_path, "r")
+        line = annot.readline().split(" ")
         pose = [float(line[1]), float(line[2]), float(line[3])]
         # And convert to degrees.
         yaw = pose[0] * 180 / np.pi
@@ -123,8 +141,17 @@ class AFLW(Dataset):
         # test: 1,966
         return self.length
 
+
 class AFW(Dataset):
-    def __init__(self, data_dir, filename_path, transform, img_ext='.jpg', annot_ext='.txt', image_mode='RGB'):
+    def __init__(
+        self,
+        data_dir,
+        filename_path,
+        transform,
+        img_ext=".jpg",
+        annot_ext=".txt",
+        image_mode="RGB",
+    ):
         self.data_dir = data_dir
         self.transform = transform
         self.img_ext = img_ext
@@ -139,15 +166,15 @@ class AFW(Dataset):
 
     def __getitem__(self, index):
         txt_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
-        img_name = self.X_train[index].split('_')[0]
+        img_name = self.X_train[index].split("_")[0]
 
         img = Image.open(os.path.join(self.data_dir, img_name + self.img_ext))
         img = img.convert(self.image_mode)
         txt_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
 
         # We get the pose in degrees
-        annot = open(txt_path, 'r')
-        line = annot.readline().split(' ')
+        annot = open(txt_path, "r")
+        line = annot.readline().split(" ")
         yaw, pitch, roll = [float(line[1]), float(line[2]), float(line[3])]
 
         # Crop the face loosely
@@ -177,15 +204,18 @@ class AFW(Dataset):
         # Around 200
         return self.length
 
+
 class BIWI(Dataset):
-    def __init__(self, data_dir, filename_path, transform, image_mode='RGB', train_mode=True):
+    def __init__(
+        self, data_dir, filename_path, transform, image_mode="RGB", train_mode=True
+    ):
         self.data_dir = data_dir
         self.transform = transform
 
         d = np.load(filename_path)
 
-        x_data = d['image']
-        y_data = d['pose']
+        x_data = d["image"]
+        y_data = d["pose"]
         self.X_train = x_data
         self.y_train = y_data
         self.image_mode = image_mode
@@ -196,9 +226,9 @@ class BIWI(Dataset):
         img = Image.fromarray(np.uint8(self.X_train[index]))
         img = img.convert(self.image_mode)
 
-        roll = self.y_train[index][2]/180*np.pi
-        yaw = self.y_train[index][0]/180*np.pi
-        pitch = self.y_train[index][1]/180*np.pi
+        roll = self.y_train[index][2] / 180 * np.pi
+        yaw = self.y_train[index][0] / 180 * np.pi
+        pitch = self.y_train[index][1] / 180 * np.pi
         cont_labels = torch.FloatTensor([yaw, pitch, roll])
 
         if self.train_mode:
@@ -221,7 +251,6 @@ class BIWI(Dataset):
         if self.transform is not None:
             img = self.transform(img)
 
-
         # Get target tensors
         cont_labels = torch.FloatTensor([yaw, pitch, roll])
         return img, torch.FloatTensor(R), cont_labels, self.X_train[index]
@@ -230,9 +259,18 @@ class BIWI(Dataset):
         # 15,667
         return self.length
 
+
 class Pose_300W_LP(Dataset):
     # Head pose from 300W-LP dataset
-    def __init__(self, data_dir, filename_path, transform, img_ext='.jpg', annot_ext='.mat', image_mode='RGB'):
+    def __init__(
+        self,
+        data_dir,
+        filename_path,
+        transform,
+        img_ext=".jpg",
+        annot_ext=".mat",
+        image_mode="RGB",
+    ):
         self.data_dir = data_dir
         self.transform = transform
         self.img_ext = img_ext
@@ -245,11 +283,11 @@ class Pose_300W_LP(Dataset):
         self.length = len(filename_list)
 
     def __getitem__(self, index):
-        img = Image.open(os.path.join(
-            self.data_dir, self.X_train[index] + self.img_ext))
+        img = Image.open(
+            os.path.join(self.data_dir, self.X_train[index] + self.img_ext)
+        )
         img = img.convert(self.image_mode)
-        mat_path = os.path.join(
-            self.data_dir, self.y_train[index] + self.annot_ext)
+        mat_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
 
         # Crop the face loosely
         pt2d = utils.get_pt2d_from_mat(mat_path)
@@ -269,9 +307,9 @@ class Pose_300W_LP(Dataset):
         # We get the pose in radians
         pose = utils.get_ypr_from_mat(mat_path)
         # And convert to degrees.
-        pitch = pose[0] # * 180 / np.pi
-        yaw = pose[1] #* 180 / np.pi
-        roll = pose[2] # * 180 / np.pi
+        pitch = pose[0]  # * 180 / np.pi
+        yaw = pose[1]  # * 180 / np.pi
+        roll = pose[2]  # * 180 / np.pi
 
         # Gray images
 
@@ -288,41 +326,39 @@ class Pose_300W_LP(Dataset):
             img = img.filter(ImageFilter.BLUR)
 
         # Add gaussian noise to label
-        #mu, sigma = 0, 0.01 
-        #noise = np.random.normal(mu, sigma, [3,3])
-        #print(noise) 
+        # mu, sigma = 0, 0.01
+        # noise = np.random.normal(mu, sigma, [3,3])
+        # print(noise)
 
         # Get target tensors
-        R = utils.get_R(pitch, yaw, roll)#+ noise
-        
-        #labels = torch.FloatTensor([temp_l_vec, temp_b_vec, temp_f_vec])
+        R = utils.get_R(pitch, yaw, roll)  # + noise
+
+        # labels = torch.FloatTensor([temp_l_vec, temp_b_vec, temp_f_vec])
 
         if self.transform is not None:
             img = self.transform(img)
 
-        return img,  torch.FloatTensor(R),[], self.X_train[index]
+        return img, torch.FloatTensor(R), [], self.X_train[index]
 
     def __len__(self):
         # 122,450
         return self.length
 
-def getDataset(dataset, data_dir, filename_list, transformations, train_mode = True):
-    if dataset == 'Pose_300W_LP':
-            pose_dataset = Pose_300W_LP(
-                data_dir, filename_list, transformations)
-    elif dataset == 'AFLW2000':
-        pose_dataset = AFLW2000(
-            data_dir, filename_list, transformations)
-    elif dataset == 'BIWI':
+
+def getDataset(dataset, data_dir, filename_list, transformations, train_mode=True):
+    if dataset == "Pose_300W_LP":
+        pose_dataset = Pose_300W_LP(data_dir, filename_list, transformations)
+    elif dataset == "AFLW2000":
+        pose_dataset = AFLW2000(data_dir, filename_list, transformations)
+    elif dataset == "BIWI":
         pose_dataset = BIWI(
-            data_dir, filename_list, transformations, train_mode= train_mode)
-    elif dataset == 'AFLW':
-        pose_dataset = AFLW(
-            data_dir, filename_list, transformations)
-    elif dataset == 'AFW':
-        pose_dataset = AFW(
-            data_dir, filename_list, transformations)
+            data_dir, filename_list, transformations, train_mode=train_mode
+        )
+    elif dataset == "AFLW":
+        pose_dataset = AFLW(data_dir, filename_list, transformations)
+    elif dataset == "AFW":
+        pose_dataset = AFW(data_dir, filename_list, transformations)
     else:
-        raise NameError('Error: not a valid dataset name')
+        raise NameError("Error: not a valid dataset name")
 
     return pose_dataset
