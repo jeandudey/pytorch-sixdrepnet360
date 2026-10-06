@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 (c) 2023 Thorsten Hempel
+#
+# SPDX-License-Identifier: MIT
+
 import math
 from matplotlib import pyplot as plt
 import sys
