@@ -90,7 +90,10 @@ if __name__ == "__main__":
         train_mode=False,
     )
     test_loader = torch.utils.data.DataLoader(
-        dataset=pose_dataset, batch_size=args.batch_size, num_workers=2, shuffle=False
+        dataset=pose_dataset,
+        batch_size=args.batch_size,
+        num_workers=2,
+        shuffle=False,
     )
 
     # Load snapshot
@@ -198,15 +201,19 @@ if __name__ == "__main__":
                         os.path.join(args.data_dir, name.split(",")[0])
                     )
 
-                if args.dataset == "AFLW2000":
+                elif args.dataset == "AFLW2000":
                     cv2_img = cv2.imread(os.path.join(args.data_dir, name + ".jpg"))
 
                 elif args.dataset == "BIWI":
                     vis = np.asarray(name, dtype=np.uint8)
                     cv2_img = cv2.cvtColor(vis, cv2.COLOR_RGB2BGR)
 
+                else:
+                    raise ValueError(f"Visualization not supported for {args.dataset}")
+
                 if cv2_img is None:
                     raise ValueError("Failed to load image.")
+                cv2_img = cv2_img.astype(np.uint8)
                 utils.draw_axis(
                     cv2_img,
                     y_pred_deg[0],

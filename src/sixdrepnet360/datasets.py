@@ -3,14 +3,18 @@
 # SPDX-License-Identifier: MIT
 
 import os
+from collections.abc import Callable
 
 import numpy as np
 import torch
+from numpy.typing import NDArray
 from PIL import Image, ImageFilter
 from torch.utils.data.dataset import Dataset
-from torchvision import transforms
 
 from sixdrepnet360 import utils
+
+Transform = Callable[[Image.Image], torch.Tensor]
+Sample = tuple[torch.Tensor, torch.Tensor, torch.Tensor, str | NDArray[np.uint8]]
 
 
 def get_list_from_filenames(file_path: str) -> list[str]:
@@ -23,11 +27,20 @@ def get_list_from_filenames(file_path: str) -> list[str]:
 
 
 class AFLW2000(Dataset):
+    data_dir: str
+    transform: Transform
+    img_ext: str
+    annot_ext: str
+    image_mode: str
+    X_train: list[str]
+    y_train: list[str]
+    length: int
+
     def __init__(
         self,
         data_dir: str,
         filename_path: str,
-        transform: transforms.Compose,
+        transform: Transform,
         img_ext: str = ".jpg",
         annot_ext: str = ".mat",
         image_mode: str = "RGB",
@@ -43,9 +56,7 @@ class AFLW2000(Dataset):
         self.image_mode = image_mode
         self.length = len(filename_list)
 
-    def __getitem__(
-        self, index: int
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
+    def __getitem__(self, index: int) -> Sample:
         img = Image.open(
             os.path.join(self.data_dir, self.X_train[index] + self.img_ext)
         )
@@ -78,8 +89,7 @@ class AFLW2000(Dataset):
 
         labels = torch.FloatTensor([yaw, pitch, roll])
 
-        if self.transform is not None:
-            img = self.transform(img)
+        img = self.transform(img)
 
         return img, torch.FloatTensor(R), labels, self.X_train[index]
 
@@ -89,11 +99,20 @@ class AFLW2000(Dataset):
 
 
 class AFLW(Dataset):
+    data_dir: str
+    transform: Transform
+    img_ext: str
+    annot_ext: str
+    image_mode: str
+    X_train: list[str]
+    y_train: list[str]
+    length: int
+
     def __init__(
         self,
         data_dir: str,
         filename_path: str,
-        transform: transforms.Compose,
+        transform: Transform,
         img_ext: str = ".jpg",
         annot_ext: str = ".txt",
         image_mode: str = "RGB",
@@ -110,9 +129,7 @@ class AFLW(Dataset):
         self.image_mode = image_mode
         self.length = len(filename_list)
 
-    def __getitem__(
-        self, index: int
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
+    def __getitem__(self, index: int) -> Sample:
         img = Image.open(
             os.path.join(self.data_dir, self.X_train[index] + self.img_ext)
         )
@@ -134,8 +151,7 @@ class AFLW(Dataset):
         labels = torch.LongTensor(np.digitize([yaw, pitch, roll], bins) - 1)
         cont_labels = torch.FloatTensor([yaw, pitch, roll])
 
-        if self.transform is not None:
-            img = self.transform(img)
+        img = self.transform(img)
 
         return img, labels, cont_labels, self.X_train[index]
 
@@ -150,7 +166,7 @@ class AFW(Dataset):
         self,
         data_dir: str,
         filename_path: str,
-        transform: transforms.Compose,
+        transform: Transform,
         img_ext: str = ".jpg",
         annot_ext: str = ".txt",
         image_mode: str = "RGB",
@@ -167,9 +183,7 @@ class AFW(Dataset):
         self.image_mode = image_mode
         self.length = len(filename_list)
 
-    def __getitem__(
-        self, index: int
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
+    def __getitem__(self, index: int) -> Sample:
         txt_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
         img_name = self.X_train[index].split("_")[0]
 
@@ -200,8 +214,7 @@ class AFW(Dataset):
         labels = torch.LongTensor(np.digitize([yaw, pitch, roll], bins) - 1)
         cont_labels = torch.FloatTensor([yaw, pitch, roll])
 
-        if self.transform is not None:
-            img = self.transform(img)
+        img = self.transform(img)
 
         return img, labels, cont_labels, self.X_train[index]
 
@@ -215,7 +228,7 @@ class BIWI(Dataset):
         self,
         data_dir: str,
         filename_path: str,
-        transform: transforms.Compose,
+        transform: Transform,
         image_mode: str = "RGB",
         train_mode: bool = True,
     ) -> None:
@@ -232,9 +245,7 @@ class BIWI(Dataset):
         self.train_mode = train_mode
         self.length = len(x_data)
 
-    def __getitem__(
-        self, index: int
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
+    def __getitem__(self, index: int) -> Sample:
         img = Image.fromarray(self.X_train[index].astype(np.uint8))
         img = img.convert(self.image_mode)
 
@@ -258,8 +269,7 @@ class BIWI(Dataset):
 
         R = utils.get_R(pitch, yaw, roll)
 
-        if self.transform is not None:
-            img = self.transform(img)
+        img = self.transform(img)
 
         # Get target tensors
         cont_labels = torch.FloatTensor([yaw, pitch, roll])
@@ -276,7 +286,7 @@ class Pose_300W_LP(Dataset):
         self,
         data_dir: str,
         filename_path: str,
-        transform: transforms.Compose,
+        transform: Transform,
         img_ext: str = ".jpg",
         annot_ext: str = ".mat",
         image_mode: str = "RGB",
@@ -292,9 +302,7 @@ class Pose_300W_LP(Dataset):
         self.image_mode = image_mode
         self.length = len(filename_list)
 
-    def __getitem__(
-        self, index: int
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, str]:
+    def __getitem__(self, index: int) -> Sample:
         img = Image.open(
             os.path.join(self.data_dir, self.X_train[index] + self.img_ext)
         )
@@ -347,10 +355,9 @@ class Pose_300W_LP(Dataset):
 
         # labels = torch.FloatTensor([temp_l_vec, temp_b_vec, temp_f_vec])
 
-        if self.transform is not None:
-            img = self.transform(img)
+        img = self.transform(img)
 
-        return img, torch.FloatTensor(R), [], self.X_train[index]
+        return img, torch.FloatTensor(R), torch.empty(0), self.X_train[index]
 
     def __len__(self) -> int:
         # 122,450
@@ -360,22 +367,20 @@ class Pose_300W_LP(Dataset):
 def getDataset(
     dataset: str,
     data_dir: str,
-    filename_list: str,
-    transformations: transforms.Compose,
+    filename_path: str,
+    transform: Transform,
     train_mode: bool = True,
-) -> Dataset:
+) -> Dataset[Sample]:
     if dataset == "Pose_300W_LP":
-        pose_dataset = Pose_300W_LP(data_dir, filename_list, transformations)
+        pose_dataset = Pose_300W_LP(data_dir, filename_path, transform)
     elif dataset == "AFLW2000":
-        pose_dataset = AFLW2000(data_dir, filename_list, transformations)
+        pose_dataset = AFLW2000(data_dir, filename_path, transform)
     elif dataset == "BIWI":
-        pose_dataset = BIWI(
-            data_dir, filename_list, transformations, train_mode=train_mode
-        )
+        pose_dataset = BIWI(data_dir, filename_path, transform, train_mode=train_mode)
     elif dataset == "AFLW":
-        pose_dataset = AFLW(data_dir, filename_list, transformations)
+        pose_dataset = AFLW(data_dir, filename_path, transform)
     elif dataset == "AFW":
-        pose_dataset = AFW(data_dir, filename_list, transformations)
+        pose_dataset = AFW(data_dir, filename_path, transform)
     else:
         raise NameError("Error: not a valid dataset name")
 
