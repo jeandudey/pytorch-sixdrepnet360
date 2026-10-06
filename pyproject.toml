@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 Jean-Pierre De Jesus DIAZ
+#
+# SPDX-License-Identifier: MIT
+
+[project]
+name = "sixdrepnet360"
+version = "0.1.0"
+description = "Head pose estimation in PyTorch"
+license = "MIT"
+readme = "README.md"
+authors = [
+    { name = "Thorsten Hempel", email = "tho.hemp@protonmail.com" },
+    { name = "Jean-Pierre De Jesus DIAZ", email = "me@jeandudey.tech" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.14.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.21,<0.13.0"]
+build-backend = "uv_build"
