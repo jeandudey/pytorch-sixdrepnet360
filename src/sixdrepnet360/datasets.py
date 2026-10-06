@@ -4,6 +4,7 @@
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -161,6 +162,15 @@ class AFLW(Dataset[Sample]):
 
 
 class AFW(Dataset[Sample]):
+    data_dir: str
+    transform: Transform
+    img_ext: str
+    annot_ext: str
+    image_mode: str
+    X_train: list[str]
+    y_train: list[str]
+    length: int
+
     def __init__(
         self,
         data_dir: str,
@@ -224,6 +234,14 @@ class AFW(Dataset[Sample]):
 
 
 class BIWI(Dataset[Sample]):
+    data_dir: str
+    transform: Transform
+    X_train: NDArray[Any]
+    y_train: NDArray[Any]
+    image_mode: str
+    train_mode: bool
+    length: int
+
     def __init__(
         self,
         data_dir: str,
@@ -283,6 +301,15 @@ class BIWI(Dataset[Sample]):
 
 class Pose_300W_LP(Dataset[Sample]):
     # Head pose from 300W-LP dataset
+    data_dir: str
+    transform: Transform
+    img_ext: str
+    annot_ext: str
+    image_mode: str
+    X_train: list[str]
+    y_train: list[str]
+    length: int
+
     def __init__(
         self,
         data_dir: str,
