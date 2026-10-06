@@ -116,10 +116,7 @@ def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size=100):
     yaw = -(yaw * np.pi / 180)
     roll = roll * np.pi / 180
 
-    if tdx != None and tdy != None:
-        tdx = tdx
-        tdy = tdy
-    else:
+    if tdx is None or tdy is None:
         height, width = img.shape[:2]
         tdx = width / 2
         tdy = height / 2
@@ -182,7 +179,7 @@ def normalize_vector(v):
         eps = torch.autograd.Variable(torch.FloatTensor([1e-8])).to(torch.device("cpu"))
     else:
         eps = torch.autograd.Variable(torch.FloatTensor([1e-8])).to(
-            torch.device("cuda:%d" % gpu)
+            torch.device(f"cuda:{gpu}")
         )
     v_mag = torch.max(v_mag, eps)
     v_mag = v_mag.view(batch, 1).expand(batch, v.shape[1])
@@ -249,7 +246,7 @@ def compute_euler_angles_from_rotation_matrices(rotation_matrices):
         )
     else:
         out_euler = torch.autograd.Variable(torch.zeros(batch, 3)).to(
-            torch.device("cuda:%d" % gpu)
+            torch.device(f"cuda:{gpu}")
         )
     out_euler[:, 0] = x * (1 - singular) + xs * singular
     out_euler[:, 1] = y * (1 - singular) + ys * singular

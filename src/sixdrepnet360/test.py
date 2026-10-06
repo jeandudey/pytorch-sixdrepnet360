@@ -290,22 +290,14 @@ if __name__ == "__main__":
                 cv2.waitKey(0)
                 cv2.imwrite(os.path.join("output/img/", name + ".png"), cv2_img)
 
+        mae = (yaw_error + pitch_error + roll_error) / (total * 3)
         print(
-            "Yaw: %.4f, Pitch: %.4f, Roll: %.4f, MAE: %.4f"
-            % (
-                yaw_error / total,
-                pitch_error / total,
-                roll_error / total,
-                (yaw_error + pitch_error + roll_error) / (total * 3),
-            )
+            f"Yaw: {yaw_error / total:.4f}, Pitch: {pitch_error / total:.4f}, "
+            f"Roll: {roll_error / total:.4f}, MAE: {mae:.4f}"
         )
 
+        vmae = (v1_err + v2_err + v3_err) / (total * 3)
         print(
-            "Vec1: %.4f, Vec2: %.4f, Vec3: %.4f, VMAE: %.4f"
-            % (
-                v1_err / total,
-                v2_err / total,
-                v3_err / total,
-                (v1_err + v2_err + v3_err) / (total * 3),
-            )
+            f"Vec1: {v1_err / total:.4f}, Vec2: {v2_err / total:.4f}, "
+            f"Vec3: {v3_err / total:.4f}, VMAE: {vmae:.4f}"
         )

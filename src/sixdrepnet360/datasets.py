@@ -114,8 +114,8 @@ class AFLW(Dataset):
         txt_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
 
         # We get the pose in radians
-        annot = open(txt_path, "r")
-        line = annot.readline().split(" ")
+        with open(txt_path) as annot:
+            line = annot.readline().split(" ")
         pose = [float(line[1]), float(line[2]), float(line[3])]
         # And convert to degrees.
         yaw = pose[0] * 180 / np.pi
@@ -170,8 +170,8 @@ class AFW(Dataset):
         txt_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
 
         # We get the pose in degrees
-        annot = open(txt_path, "r")
-        line = annot.readline().split(" ")
+        with open(txt_path) as annot:
+            line = annot.readline().split(" ")
         yaw, pitch, roll = [float(line[1]), float(line[2]), float(line[3])]
 
         # Crop the face loosely
@@ -242,8 +242,6 @@ class BIWI(Dataset):
                 img = img.filter(ImageFilter.BLUR)
 
         R = utils.get_R(pitch, yaw, roll)
-
-        labels = torch.FloatTensor([yaw, pitch, roll])
 
         if self.transform is not None:
             img = self.transform(img)
