@@ -24,9 +24,19 @@ dependencies = [
 
 [project.scripts]
 sixdrepnet360-test = "sixdrepnet360.test:main"
+sixdrepnet360-export = "sixdrepnet360.export:main"
+
+[project.optional-dependencies]
+export = [
+    "onnx>=1.23.2",
+    "onnxscript>=0.7.2",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ANN"]
+
+[tool.uv.sources]
+sixdrepnet360 = { workspace = true }
 
 [build-system]
 requires = ["uv_build>=0.12.21,<0.13.0"]
@@ -35,5 +45,6 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "ruff>=0.16.10",
+    "sixdrepnet360[export]",
     "ty>=0.0.84",
 ]
