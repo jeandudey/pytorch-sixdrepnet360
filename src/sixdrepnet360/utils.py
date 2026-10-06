@@ -172,15 +172,13 @@ def get_ypr_from_mat(mat_path: str) -> NDArray[np.float32]:
     # [pitch yaw roll tdx tdy tdz scale_factor]
     pre_pose_params = mat["Pose_Para"][0]
     # Get [pitch, yaw, roll]
-    pose_params = pre_pose_params[:3]
-    return pose_params
+    return pre_pose_params[:3]
 
 
 def get_pt2d_from_mat(mat_path: str) -> NDArray[np.float64]:
     # Get 2D landmarks
     mat = sio.loadmat(mat_path)
-    pt2d = mat["pt2d"]
-    return pt2d
+    return mat["pt2d"]
 
 
 # batch*n
@@ -196,8 +194,7 @@ def normalize_vector(v: torch.Tensor) -> torch.Tensor:
         )
     v_mag = torch.max(v_mag, eps)
     v_mag = v_mag.view(batch, 1).expand(batch, v.shape[1])
-    v = v / v_mag
-    return v
+    return v / v_mag
 
 
 # u, v batch*n
@@ -209,11 +206,9 @@ def cross_product(u: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     j = u[:, 2] * v[:, 0] - u[:, 0] * v[:, 2]
     k = u[:, 0] * v[:, 1] - u[:, 1] * v[:, 0]
 
-    out = torch.cat(
+    return torch.cat(
         (i.view(batch, 1), j.view(batch, 1), k.view(batch, 1)), 1
     )  # batch*3
-
-    return out
 
 
 # poses batch*6

@@ -33,7 +33,12 @@ export = [
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "ANN"]
+select = ["E", "F", "I", "UP", "B", "ANN", "PTH", "RET", "SIM", "RUF", "NPY", "PERF", "C4"]
+
+[tool.ty.rules]
+missing-override-decorator = "error"
+missing-type-argument = "error"
+division-by-zero = "error"
 
 [tool.uv.sources]
 sixdrepnet360 = { workspace = true }

@@ -70,8 +70,7 @@ class SixDRepNet360(nn.Module):
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample))
         self.inplanes = planes * block.expansion
-        for _i in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
+        layers.extend(block(self.inplanes, planes) for _i in range(1, blocks))
 
         return nn.Sequential(*layers)
 
@@ -91,6 +90,4 @@ class SixDRepNet360(nn.Module):
         x = x.view(x.size(0), -1)
 
         x = self.linear_reg(x)
-        out = utils.compute_rotation_matrix_from_ortho6d(x)
-
-        return out
+        return utils.compute_rotation_matrix_from_ortho6d(x)

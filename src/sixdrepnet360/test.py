@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
-import os
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -197,12 +197,10 @@ def main() -> None:
             if args.show_viz:
                 name = name[0]
                 if args.dataset == "Panoptic":
-                    cv2_img = cv2.imread(
-                        os.path.join(args.data_dir, name.split(",")[0])
-                    )
+                    cv2_img = cv2.imread(str(Path(args.data_dir) / name.split(",")[0]))
 
                 elif args.dataset == "AFLW2000":
-                    cv2_img = cv2.imread(os.path.join(args.data_dir, name + ".jpg"))
+                    cv2_img = cv2.imread(str(Path(args.data_dir) / (name + ".jpg")))
 
                 elif args.dataset == "BIWI":
                     vis = np.asarray(name, dtype=np.uint8)
@@ -228,7 +226,10 @@ def main() -> None:
                 # )
                 cv2.imshow("Test", cv2_img)
                 cv2.waitKey(0)
-                cv2.imwrite(os.path.join("output/img/", name + ".png"), cv2_img)
+                cv2.imwrite(str(Path("output/img") / (name + ".png")), cv2_img)
+
+        if total == 0:
+            raise ValueError("No samples found in the dataset.")
 
         mae = (yaw_error + pitch_error + roll_error) / (total * 3)
         print(

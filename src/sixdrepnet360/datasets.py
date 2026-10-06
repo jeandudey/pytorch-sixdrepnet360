@@ -2,31 +2,32 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 from collections.abc import Callable
+from pathlib import Path
 
 import numpy as np
 import torch
 from numpy.typing import NDArray
 from PIL import Image, ImageFilter
 from torch.utils.data.dataset import Dataset
+from typing_extensions import override
 
 from sixdrepnet360 import utils
 
 Transform = Callable[[Image.Image], torch.Tensor]
 Sample = tuple[torch.Tensor, torch.Tensor, torch.Tensor, str | NDArray[np.uint8]]
 
+rng = np.random.default_rng()
+
 
 def get_list_from_filenames(file_path: str) -> list[str]:
     # input:    relative path to .txt file with file names
     # output:   list of relative path names
     print(file_path)
-    with open(file_path) as f:
-        lines = f.read().splitlines()
-    return lines
+    return Path(file_path).read_text().splitlines()
 
 
-class AFLW2000(Dataset):
+class AFLW2000(Dataset[Sample]):
     data_dir: str
     transform: Transform
     img_ext: str
@@ -56,12 +57,11 @@ class AFLW2000(Dataset):
         self.image_mode = image_mode
         self.length = len(filename_list)
 
+    @override
     def __getitem__(self, index: int) -> Sample:
-        img = Image.open(
-            os.path.join(self.data_dir, self.X_train[index] + self.img_ext)
-        )
+        img = Image.open(Path(self.data_dir) / (self.X_train[index] + self.img_ext))
         img = img.convert(self.image_mode)
-        mat_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
+        mat_path = str(Path(self.data_dir) / (self.y_train[index] + self.annot_ext))
 
         # Crop the face loosely
         pt2d = utils.get_pt2d_from_mat(mat_path)
@@ -98,7 +98,7 @@ class AFLW2000(Dataset):
         return self.length
 
 
-class AFLW(Dataset):
+class AFLW(Dataset[Sample]):
     data_dir: str
     transform: Transform
     img_ext: str
@@ -129,15 +129,14 @@ class AFLW(Dataset):
         self.image_mode = image_mode
         self.length = len(filename_list)
 
+    @override
     def __getitem__(self, index: int) -> Sample:
-        img = Image.open(
-            os.path.join(self.data_dir, self.X_train[index] + self.img_ext)
-        )
+        img = Image.open(Path(self.data_dir) / (self.X_train[index] + self.img_ext))
         img = img.convert(self.image_mode)
-        txt_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
+        txt_path = Path(self.data_dir) / (self.y_train[index] + self.annot_ext)
 
         # We get the pose in radians
-        with open(txt_path) as annot:
+        with txt_path.open() as annot:
             line = annot.readline().split(" ")
         pose = [float(line[1]), float(line[2]), float(line[3])]
         # And convert to degrees.
@@ -161,7 +160,7 @@ class AFLW(Dataset):
         return self.length
 
 
-class AFW(Dataset):
+class AFW(Dataset[Sample]):
     def __init__(
         self,
         data_dir: str,
@@ -183,16 +182,17 @@ class AFW(Dataset):
         self.image_mode = image_mode
         self.length = len(filename_list)
 
+    @override
     def __getitem__(self, index: int) -> Sample:
-        txt_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
+        txt_path = Path(self.data_dir) / (self.y_train[index] + self.annot_ext)
         img_name = self.X_train[index].split("_")[0]
 
-        img = Image.open(os.path.join(self.data_dir, img_name + self.img_ext))
+        img = Image.open(Path(self.data_dir) / (img_name + self.img_ext))
         img = img.convert(self.image_mode)
-        txt_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
+        txt_path = Path(self.data_dir) / (self.y_train[index] + self.annot_ext)
 
         # We get the pose in degrees
-        with open(txt_path) as annot:
+        with txt_path.open() as annot:
             line = annot.readline().split(" ")
         yaw, pitch, roll = [float(line[1]), float(line[2]), float(line[3])]
 
@@ -223,7 +223,7 @@ class AFW(Dataset):
         return self.length
 
 
-class BIWI(Dataset):
+class BIWI(Dataset[Sample]):
     def __init__(
         self,
         data_dir: str,
@@ -245,6 +245,7 @@ class BIWI(Dataset):
         self.train_mode = train_mode
         self.length = len(x_data)
 
+    @override
     def __getitem__(self, index: int) -> Sample:
         img = Image.fromarray(self.X_train[index].astype(np.uint8))
         img = img.convert(self.image_mode)
@@ -256,14 +257,14 @@ class BIWI(Dataset):
 
         if self.train_mode:
             # Flip?
-            rnd = np.random.random_sample()
+            rnd = rng.random()
             if rnd < 0.5:
                 yaw = -yaw
                 roll = -roll
                 img = img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
 
             # Blur?
-            rnd = np.random.random_sample()
+            rnd = rng.random()
             if rnd < 0.05:
                 img = img.filter(ImageFilter.BLUR)
 
@@ -280,7 +281,7 @@ class BIWI(Dataset):
         return self.length
 
 
-class Pose_300W_LP(Dataset):
+class Pose_300W_LP(Dataset[Sample]):
     # Head pose from 300W-LP dataset
     def __init__(
         self,
@@ -302,12 +303,11 @@ class Pose_300W_LP(Dataset):
         self.image_mode = image_mode
         self.length = len(filename_list)
 
+    @override
     def __getitem__(self, index: int) -> Sample:
-        img = Image.open(
-            os.path.join(self.data_dir, self.X_train[index] + self.img_ext)
-        )
+        img = Image.open(Path(self.data_dir) / (self.X_train[index] + self.img_ext))
         img = img.convert(self.image_mode)
-        mat_path = os.path.join(self.data_dir, self.y_train[index] + self.annot_ext)
+        mat_path = str(Path(self.data_dir) / (self.y_train[index] + self.annot_ext))
 
         # Crop the face loosely
         pt2d = utils.get_pt2d_from_mat(mat_path)
@@ -317,7 +317,7 @@ class Pose_300W_LP(Dataset):
         y_max = max(pt2d[1, :])
 
         # k = 0.2 to 0.40
-        k = np.random.random_sample() * 0.2 + 0.2
+        k = rng.random() * 0.2 + 0.2
         x_min -= 0.6 * k * abs(x_max - x_min)
         y_min -= 2 * k * abs(y_max - y_min)
         x_max += 0.6 * k * abs(x_max - x_min)
@@ -334,14 +334,14 @@ class Pose_300W_LP(Dataset):
         # Gray images
 
         # Flip?
-        rnd = np.random.random_sample()
+        rnd = rng.random()
         if rnd < 0.5:
             yaw = -yaw
             roll = -roll
             img = img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
 
         # Blur?
-        rnd = np.random.random_sample()
+        rnd = rng.random()
         if rnd < 0.05:
             img = img.filter(ImageFilter.BLUR)
 
