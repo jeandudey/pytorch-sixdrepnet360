@@ -39,6 +39,7 @@ select = ["E", "F", "I", "UP", "B", "ANN", "PTH", "RET", "SIM", "RUF", "NPY", "P
 missing-override-decorator = "error"
 missing-type-argument = "error"
 division-by-zero = "error"
+unsound-assignment = "error"
 
 [tool.uv.sources]
 sixdrepnet360 = { workspace = true }

@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import math
+from typing import cast
 
 import torch
 from torch import nn
@@ -76,18 +77,19 @@ class SixDRepNet360(nn.Module):
 
     @override
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
+        # nn.Module.__call__ is typed as returning Any, so each layer output is cast.
+        x = cast(torch.Tensor, self.conv1(x))
+        x = cast(torch.Tensor, self.bn1(x))
+        x = cast(torch.Tensor, self.relu(x))
+        x = cast(torch.Tensor, self.maxpool(x))
 
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
+        x = cast(torch.Tensor, self.layer1(x))
+        x = cast(torch.Tensor, self.layer2(x))
+        x = cast(torch.Tensor, self.layer3(x))
+        x = cast(torch.Tensor, self.layer4(x))
 
-        x = self.avgpool(x)
+        x = cast(torch.Tensor, self.avgpool(x))
         x = x.view(x.size(0), -1)
 
-        x = self.linear_reg(x)
+        x = cast(torch.Tensor, self.linear_reg(x))
         return utils.compute_rotation_matrix_from_ortho6d(x)

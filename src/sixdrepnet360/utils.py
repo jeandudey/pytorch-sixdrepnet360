@@ -132,8 +132,8 @@ def draw_axis(
 
     if tdx is None or tdy is None:
         height, width = img.shape[:2]
-        tdx = width / 2
-        tdy = height / 2
+        tdx = int(width) / 2
+        tdy = int(height) / 2
 
     # X-Axis pointing to right. drawn in red
     x1 = size * (cos(yaw) * cos(roll)) + tdx
