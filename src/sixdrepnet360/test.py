@@ -3,17 +3,21 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
+from collections.abc import Sequence
 from pathlib import Path
+from typing import cast
 
 import cv2
 import numpy as np
 import torch
 import torchvision
+from numpy.typing import NDArray
 from torch.backends import cudnn
 from torch.hub import load_state_dict_from_url
-from torchvision import transforms
+from torch.utils.data import DataLoader
 
 from sixdrepnet360 import datasets, utils
+from sixdrepnet360.evaluate import evaluate, make_eval_transform
 from sixdrepnet360.model import SixDRepNet360
 
 # matplotlib.use("gtk")
@@ -68,28 +72,19 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     cudnn.enabled = True
-    gpu = args.gpu_id
+    device = torch.device(f"cuda:{args.gpu_id}" if torch.cuda.is_available() else "cpu")
     snapshot_path = args.snapshot
     model = SixDRepNet360(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 6)
     print("Loading data.")
-
-    transformations = transforms.Compose(
-        [
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ]
-    )
 
     pose_dataset = datasets.getDataset(
         args.dataset,
         args.data_dir,
         args.filename_list,
-        transformations,
+        make_eval_transform(),
         train_mode=False,
     )
-    test_loader = torch.utils.data.DataLoader(
+    test_loader = DataLoader(
         dataset=pose_dataset,
         batch_size=args.batch_size,
         num_workers=2,
@@ -109,139 +104,60 @@ def main() -> None:
     else:
         model.load_state_dict(saved_state_dict)
 
-    model.cuda(gpu)
+    model.to(device)
 
-    # Test the Model
-    model.eval()  # Change model to 'eval' mode (BN uses moving mean/var).
-
-    total = 0
-    yaw_error = pitch_error = roll_error = 0.0
-    v1_err = v2_err = v3_err = 0.0
-
-    with torch.no_grad():
-        for _i, (images, r_label, cont_labels, name) in enumerate(test_loader):
-            images = torch.Tensor(images).cuda(gpu)
-            total += cont_labels.size(0)
-
-            # gt matrix
-            R_gt = r_label
-
-            # gt euler
-            y_gt_deg = cont_labels[:, 0].float() * 180 / np.pi
-            p_gt_deg = cont_labels[:, 1].float() * 180 / np.pi
-            r_gt_deg = cont_labels[:, 2].float() * 180 / np.pi
-
-            R_pred = model(images)
-
-            euler = (
-                utils.compute_euler_angles_from_rotation_matrices(R_pred) * 180 / np.pi
-            )
-            p_pred_deg = euler[:, 0].cpu()
-            y_pred_deg = euler[:, 1].cpu()
-            r_pred_deg = euler[:, 2].cpu()
-
-            R_pred = R_pred.cpu()
-            v1_err += torch.sum(
-                torch.acos(torch.clamp(torch.sum(R_gt[:, 0] * R_pred[:, 0], 1), -1, 1))
-                * 180
-                / np.pi
-            )
-            v2_err += torch.sum(
-                torch.acos(torch.clamp(torch.sum(R_gt[:, 1] * R_pred[:, 1], 1), -1, 1))
-                * 180
-                / np.pi
-            )
-            v3_err += torch.sum(
-                torch.acos(torch.clamp(torch.sum(R_gt[:, 2] * R_pred[:, 2], 1), -1, 1))
-                * 180
-                / np.pi
+    def draw(
+        names: Sequence[str | NDArray[np.uint8]],
+        y_pred_deg: torch.Tensor,
+        p_pred_deg: torch.Tensor,
+        r_pred_deg: torch.Tensor,
+    ) -> None:
+        name = names[0]
+        if args.dataset == "Panoptic":
+            cv2_img = cv2.imread(
+                str(Path(args.data_dir) / cast(str, name).split(",")[0])
             )
 
-            pitch_error += torch.sum(
-                torch.min(
-                    torch.stack(
-                        (
-                            torch.abs(p_gt_deg - p_pred_deg),
-                            torch.abs(p_pred_deg + 360 - p_gt_deg),
-                            torch.abs(p_pred_deg - 360 - p_gt_deg),
-                        )
-                    ),
-                    0,
-                )[0]
-            )
-            yaw_error += torch.sum(
-                torch.min(
-                    torch.stack(
-                        (
-                            torch.abs(y_gt_deg - y_pred_deg),
-                            torch.abs(y_pred_deg + 360 - y_gt_deg),
-                            torch.abs(y_pred_deg - 360 - y_gt_deg),
-                        )
-                    ),
-                    0,
-                )[0]
-            )
-            roll_error += torch.sum(
-                torch.min(
-                    torch.stack(
-                        (
-                            torch.abs(r_gt_deg - r_pred_deg),
-                            torch.abs(r_pred_deg + 360 - r_gt_deg),
-                            torch.abs(r_pred_deg - 360 - r_gt_deg),
-                        )
-                    ),
-                    0,
-                )[0]
-            )
+        elif args.dataset == "AFLW2000":
+            cv2_img = cv2.imread(str(Path(args.data_dir) / (cast(str, name) + ".jpg")))
 
-            if args.show_viz:
-                name = name[0]
-                if args.dataset == "Panoptic":
-                    cv2_img = cv2.imread(str(Path(args.data_dir) / name.split(",")[0]))
+        elif args.dataset == "BIWI":
+            vis = np.asarray(name, dtype=np.uint8)
+            cv2_img = cv2.cvtColor(vis, cv2.COLOR_RGB2BGR)
 
-                elif args.dataset == "AFLW2000":
-                    cv2_img = cv2.imread(str(Path(args.data_dir) / (name + ".jpg")))
+        else:
+            raise ValueError(f"Visualization not supported for {args.dataset}")
 
-                elif args.dataset == "BIWI":
-                    vis = np.asarray(name, dtype=np.uint8)
-                    cv2_img = cv2.cvtColor(vis, cv2.COLOR_RGB2BGR)
-
-                else:
-                    raise ValueError(f"Visualization not supported for {args.dataset}")
-
-                if cv2_img is None:
-                    raise ValueError("Failed to load image.")
-                cv2_img = cv2_img.astype(np.uint8)
-                utils.draw_axis(
-                    cv2_img,
-                    y_pred_deg[0],
-                    p_pred_deg[0],
-                    r_pred_deg[0],
-                    tdx=cv2_img.shape[1] / 2,
-                    tdy=cv2_img.shape[0] / 2,
-                    size=100,
-                )
-                # utils.plot_pose_cube(
-                #     cv2_img, y_pred_deg[0], p_pred_deg[0], r_pred_deg[0], size=200
-                # )
-                cv2.imshow("Test", cv2_img)
-                cv2.waitKey(0)
-                cv2.imwrite(str(Path("output/img") / (name + ".png")), cv2_img)
-
-        if total == 0:
-            raise ValueError("No samples found in the dataset.")
-
-        mae = (yaw_error + pitch_error + roll_error) / (total * 3)
-        print(
-            f"Yaw: {yaw_error / total:.4f}, Pitch: {pitch_error / total:.4f}, "
-            f"Roll: {roll_error / total:.4f}, MAE: {mae:.4f}"
+        if cv2_img is None:
+            raise ValueError("Failed to load image.")
+        cv2_img = cv2_img.astype(np.uint8)
+        utils.draw_axis(
+            cv2_img,
+            y_pred_deg[0],
+            p_pred_deg[0],
+            r_pred_deg[0],
+            tdx=cv2_img.shape[1] / 2,
+            tdy=cv2_img.shape[0] / 2,
+            size=100,
         )
+        # utils.plot_pose_cube(
+        #     cv2_img, y_pred_deg[0], p_pred_deg[0], r_pred_deg[0], size=200
+        # )
+        cv2.imshow("Test", cv2_img)
+        cv2.waitKey(0)
+        cv2.imwrite(str(Path("output/img") / (cast(str, name) + ".png")), cv2_img)
 
-        vmae = (v1_err + v2_err + v3_err) / (total * 3)
-        print(
-            f"Vec1: {v1_err / total:.4f}, Vec2: {v2_err / total:.4f}, "
-            f"Vec3: {v3_err / total:.4f}, VMAE: {vmae:.4f}"
-        )
+    metrics = evaluate(
+        model, test_loader, device, on_batch=draw if args.show_viz else None
+    )
+    print(
+        f"Yaw: {metrics.yaw:.4f}, Pitch: {metrics.pitch:.4f}, "
+        f"Roll: {metrics.roll:.4f}, MAE: {metrics.mae:.4f}"
+    )
+    print(
+        f"Vec1: {metrics.vec1:.4f}, Vec2: {metrics.vec2:.4f}, "
+        f"Vec3: {metrics.vec3:.4f}, VMAE: {metrics.vmae:.4f}"
+    )
 
 
 if __name__ == "__main__":
