@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from math import cos, sin
+from typing import Literal
 
 import cv2
 import numpy as np
@@ -264,13 +265,22 @@ def compute_euler_angles_from_rotation_matrices(
     return out_euler
 
 
-def get_R(x: float, y: float, z: float) -> np.ndarray:
-    """Get rotation matrix from three rotation angles (radians). right-handed.
+def get_R(
+    x: float,
+    y: float,
+    z: float,
+) -> np.ndarray[tuple[Literal[3], Literal[3]], np.dtype[np.float64]]:
+    """Get rotation matrix from three rotation angles (radians), right-handed.
+
     Args:
-        angles: [3,]. x, y, z angles
+        x: Rotation about the x axis, in radians.
+        y: Rotation about the y axis, in radians.
+        z: Rotation about the z axis, in radians.
+
     Returns:
-        R: [3, 3]. rotation matrix.
+        R: [3, 3] rotation matrix, composed as Rz @ Ry @ Rx.
     """
+
     # x
     Rx = np.array([[1, 0, 0], [0, np.cos(x), -np.sin(x)], [0, np.sin(x), np.cos(x)]])
     # y
