@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from math import cos, sin
-from typing import Literal
+from typing import Literal, cast
 
 import cv2
 import numpy as np
@@ -288,4 +288,9 @@ def get_R(
     # z
     Rz = np.array([[np.cos(z), -np.sin(z), 0], [np.sin(z), np.cos(z), 0], [0, 0, 1]])
 
-    return Rz.dot(Ry.dot(Rx))
+    # ndarray.dot() is typed as returning Any, so the result is cast to the
+    # declared shape.
+    return cast(
+        "np.ndarray[tuple[Literal[3], Literal[3]], np.dtype[np.float64]]",
+        Rz.dot(Ry.dot(Rx)),
+    )

@@ -36,6 +36,15 @@ train = [
     "albumentationsx>=2.4.13",
     "tensorboard>=2.21.0",
 ]
+rocm = [
+    "torch>=2.14.1",
+    "torchvision>=0.29.1",
+    "triton-rocm>=3.8.0; sys_platform == 'linux'",
+]
+cuda = [
+    "torch>=2.14.1",
+    "torchvision>=0.29.1",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ANN", "PTH", "RET", "SIM", "RUF", "NPY", "PERF", "C4"]
@@ -46,6 +55,14 @@ missing-type-argument = "error"
 division-by-zero = "error"
 unsound-assignment = "error"
 
+[tool.uv]
+conflicts = [
+    [
+        { extra = "cuda" },
+        { extra = "rocm" },
+    ],
+]
+
 [[tool.uv.index]]
 name = "pytorch-rocm"
 url = "https://download.pytorch.org/whl/rocm7.2"
@@ -53,9 +70,9 @@ explicit = true
 
 [tool.uv.sources]
 sixdrepnet360 = { workspace = true }
-torch = { index = "pytorch-rocm", marker = "sys_platform == 'linux'" }
-torchvision = { index = "pytorch-rocm", marker = "sys_platform == 'linux'" }
-triton-rocm = { index = "pytorch-rocm", marker = "sys_platform == 'linux'" }
+torch = { index = "pytorch-rocm", extra = "rocm", marker = "sys_platform == 'linux'" }
+torchvision = { index = "pytorch-rocm", extra = "rocm", marker = "sys_platform == 'linux'" }
+triton-rocm = { index = "pytorch-rocm", extra = "rocm", marker = "sys_platform == 'linux'" }
 
 [build-system]
 requires = ["uv_build>=0.12.21,<0.13.0"]
@@ -66,6 +83,5 @@ dev = [
     "ruff>=0.16.10",
     "sixdrepnet360[export]",
     "sixdrepnet360[train]",
-    "triton-rocm>=3.8.0; sys_platform == 'linux'",
     "ty>=0.0.84",
 ]

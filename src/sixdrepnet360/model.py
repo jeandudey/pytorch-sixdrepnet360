@@ -92,4 +92,8 @@ class SixDRepNet360(nn.Module):
         x = x.view(x.size(0), -1)
 
         x = cast(torch.Tensor, self.linear_reg(x))
-        return utils.compute_rotation_matrix_from_ortho6d(x)
+        # normalize_vector() squares its input before summing; under fp16 autocast
+        # that overflows for unremarkable magnitudes (e.g. 300**2 > fp16's max),
+        # silently collapsing the result to zero rather than raising or producing
+        # NaN/Inf. Computing in fp32 avoids that regardless of autocast.
+        return utils.compute_rotation_matrix_from_ortho6d(x.float())
